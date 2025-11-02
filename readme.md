@@ -45,6 +45,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 pip install --upgrade pip
+
 pip install -r requirements.txt
 
 3️⃣ Dependencies
@@ -66,9 +67,10 @@ Run the scraper
 
 Example command:
 
-python run_scrape.py --projects HADOOP SPARK KAFKA --max-results 50 --concurrency 5
+Command to Run the project->>>python run_scrape.py --projects HADOOP SPARK KAFKA --max-results 50 --concurrency 5
 
 Arguments
+
 Argument	Description	Default
 
 --projects	List of Apache Jira project keys	Required
