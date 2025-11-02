@@ -33,7 +33,7 @@ Optional: Git & GitHub CLI for repository management
 
 Clone or download the project and install dependencies:
 
-git clone https://github.com/<your-username>/web-scraper-jira.git
+git clone https://github.com/Samrath2004/Web-Scraper.git
 
 cd web-scraper-jira
 
