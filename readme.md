@@ -129,21 +129,37 @@ Modular structure — separate folders for scraper, transform, and utils for cla
 
 Edge Case	How It’s Handled
 HTTP 429 (Rate Limit)	Raises RateLimitError and retries after Retry-After header or exponential delay
+
 5xx Server Errors	Retries with exponential backoff up to 8 times
+
 Timeouts / Connection Errors	Automatically retried by tenacity
+
 Malformed or empty data	Skipped safely with fallback defaults; saved in bad_records/ for review
+
 Interrupted execution	Resumes via checkpoint.json with last_startAt
+
 Large HTML fields	Sanitized using BeautifulSoup (html.parser)
+
 Missing optional fields	Uses None or empty lists instead of crashing
+
 File access errors (Windows)	Retries replacing checkpoint file to handle OS locks
+
 ⚙️ Optimization Decisions
+
 Optimization	Description
+
 Async concurrency	Fetch multiple Jira pages simultaneously, limited by a semaphore
+
 Retry + backoff	Exponential retry avoids server overload and ensures success on transient errors
+
 Streaming writes	Writes JSONL lines incrementally (no full dataset in memory)
+
 Checkpointing	Saves progress after each page, allowing resume without data loss
+
 Heuristic derived fields	Generates summaries, classification labels, and QnA pairs automatically for LLM readiness
+
 Bad record isolation	Logs invalid or malformed issues into separate directory for debugging
+
 🧪 Testing
 
 Run all tests:
@@ -175,22 +191,34 @@ Each project maintains independent progress markers.
 Area	Possible Enhancement
 
 Derived fields	Integrate an LLM or summarizer for higher-quality summaries & QnA generation
+
 Storage	Write directly to SQLite / Parquet for easier downstream analysis
+
 Parallel pipelines	Use multiprocessing + async for very large-scale crawling
+
 Rate limit awareness	Adaptive throttling based on Jira response times
+
 Error analytics	Aggregate and visualize error types from logs
+
 Dockerization	Package into a Docker container for reproducible runs
+
 CI/CD Integration	Automate testing using GitHub Actions
 
 
 📚 Example Run Summary
 
 Metric	Value (Sample Run – Hadoop)
+
 Total Issues Fetched	500+
+
 Total Retries	4
+
 Skipped (Malformed)	2
+
 Total Runtime	~2 minutes
+
 Output Size	2.4 MB
+
 👨‍💻 Author
 
 Samrath
