@@ -1,0 +1,6 @@
+aiohttp
+tenacity
+ujson
+python-dateutil
+beautifulsoup4
+tqdm

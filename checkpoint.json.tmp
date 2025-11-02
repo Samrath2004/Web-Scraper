@@ -1,0 +1,14 @@
+{
+  "HADOOP": {
+    "last_startAt": 4600,
+    "completed": false
+  },
+  "SPARK": {
+    "last_startAt": 3400,
+    "completed": false
+  },
+  "KAFKA": {
+    "last_startAt": 3300,
+    "completed": false
+  }
+}
