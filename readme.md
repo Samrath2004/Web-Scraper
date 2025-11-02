@@ -34,9 +34,11 @@ Optional: Git & GitHub CLI for repository management
 Clone or download the project and install dependencies:
 
 git clone https://github.com/<your-username>/web-scraper-jira.git
+
 cd web-scraper-jira
 
 python -m venv venv
+
 # Windows
 venv\Scripts\activate
 # macOS/Linux
@@ -68,11 +70,17 @@ python run_scrape.py --projects HADOOP SPARK KAFKA --max-results 50 --concurrenc
 
 Arguments
 Argument	Description	Default
+
 --projects	List of Apache Jira project keys	Required
+
 --max-results	Results per page (Jira pagination)	50
+
 --concurrency	Number of simultaneous API calls	5
+
 --output-dir	Output directory for JSONL files	output
+
 --checkpoint-file	Path to checkpoint JSON	checkpoint.json
+
 Output
 
 Each project will produce a JSONL file:
@@ -128,6 +136,7 @@ Modular structure — separate folders for scraper, transform, and utils for cla
 ⚠️ Edge Cases Handled
 
 Edge Case	How It’s Handled
+
 HTTP 429 (Rate Limit)	Raises RateLimitError and retries after Retry-After header or exponential delay
 
 5xx Server Errors	Retries with exponential backoff up to 8 times
