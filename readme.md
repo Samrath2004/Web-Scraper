@@ -1,101 +1,112 @@
-🧩 Overview
+# 🧩 Apache Jira Web Scraper
 
-This project implements a data scraping and transformation pipeline that extracts public issue data from Apache’s Jira instance and converts it into a structured JSONL corpus suitable for training Large Language Models (LLMs).
+## 🧠 Overview
 
-The system is designed to be fault-tolerant, resumable, and efficient, handling real-world issues such as network timeouts, rate limits, and malformed data gracefully.
+This project implements a **data scraping and transformation pipeline** that extracts public issue data from **Apache’s Jira instance** and converts it into a **structured JSONL corpus** suitable for training **Large Language Models (LLMs)**.
 
-🎯 Objective
+The system is designed to be **fault-tolerant, resumable, and efficient**, handling real-world issues such as network timeouts, rate limits, and malformed data gracefully.
+
+---
+
+## 🎯 Objective
 
 The scraper:
 
-Fetches issues, comments, and metadata from three Apache Jira projects (HADOOP, SPARK, KAFKA).
+- Fetches issues, comments, and metadata from three Apache Jira projects (`HADOOP`, `SPARK`, `KAFKA`).
+- Handles network errors, retries, and timeouts using **exponential backoff**.
+- Converts unstructured HTML issue descriptions into **clean plain text**.
+- Produces a **JSONL dataset** suitable for downstream ML / NLP tasks.
+- Supports **resume functionality** with checkpointing to recover from interruptions.
 
-Handles network errors, retries, and timeouts using exponential backoff.
+---
 
-Converts unstructured HTML issue descriptions into clean plain text.
+## ⚙️ Setup & Environment Configuration
 
-Produces a JSONL dataset suitable for downstream machine learning / NLP tasks.
+### 1️⃣ Prerequisites
 
-Supports resume functionality with checkpointing to recover from interruptions.
+- Python **3.10+**
+- Internet connection (to access Apache Jira)
+- *(Optional)* Git & GitHub CLI for repository management
 
-⚙️ Setup & Environment Configuration
+---
 
-
-1️⃣ Prerequisites
-
-Python 3.10+
-
-Internet connection (to access Apache Jira)
-
-Optional: Git & GitHub CLI for repository management
-
-2️⃣ Installation
+### 2️⃣ Installation
 
 Clone or download the project and install dependencies:
 
+```bash
 git clone https://github.com/Samrath2004/Web-Scraper.git
-
 cd web-scraper-jira
 
 python -m venv venv
-
 # Windows
 venv\Scripts\activate
 # macOS/Linux
 source venv/bin/activate
 
 pip install --upgrade pip
-
 pip install -r requirements.txt
+```
 
-3️⃣ Dependencies
+---
 
-Main libraries used:
+### 3️⃣ Dependencies
 
-Library	Purpose
-aiohttp	Asynchronous HTTP requests
-tenacity	Retry with exponential backoff
-ujson	Fast JSON serialization
-beautifulsoup4	HTML-to-text conversion
-dateutil	Date parsing and normalization
-tqdm	Progress tracking
+**Main libraries used:**
 
-🚀 Usage
+| Library | Purpose |
+|----------|----------|
+| `aiohttp` | Asynchronous HTTP requests |
+| `tenacity` | Retry with exponential backoff |
+| `ujson` | Fast JSON serialization |
+| `beautifulsoup4` | HTML-to-text conversion |
+| `dateutil` | Date parsing and normalization |
+| `tqdm` | Progress tracking |
 
+---
 
-Run the scraper
+## 🚀 Usage
+
+### Run the scraper
 
 Example command:
 
-Command to Run the project->>>python run_scrape.py --projects HADOOP SPARK KAFKA --max-results 50 --concurrency 5
+```bash
+python run_scrape.py --projects HADOOP SPARK KAFKA --max-results 50 --concurrency 5
+```
 
-Arguments
+---
 
-Argument	Description	Default
+### Arguments
 
---projects	List of Apache Jira project keys	Required
+| Argument | Description | Default |
+|-----------|--------------|----------|
+| `--projects` | List of Apache Jira project keys | Required |
+| `--max-results` | Results per page (Jira pagination) | `50` |
+| `--concurrency` | Number of simultaneous API calls | `5` |
+| `--output-dir` | Output directory for JSONL files | `output` |
+| `--checkpoint-file` | Path to checkpoint JSON | `checkpoint.json` |
 
---max-results	Results per page (Jira pagination)	50
+---
 
---concurrency	Number of simultaneous API calls	5
-
---output-dir	Output directory for JSONL files	output
-
---checkpoint-file	Path to checkpoint JSON	checkpoint.json
-
-Output
+### Output
 
 Each project will produce a JSONL file:
 
+```
 output/
  ├─ HADOOP.jsonl
  ├─ SPARK.jsonl
  └─ KAFKA.jsonl
-
+```
 
 Each line represents a single Jira issue in JSON format.
 
-📁 Example Output (Sample)
+---
+
+## 📁 Example Output (Sample)
+
+```json
 {
   "id": "HADOOP-19",
   "project": "HADOOP",
@@ -121,117 +132,107 @@ Each line represents a single Jira issue in JSON format.
     ]
   }
 }
+```
 
+---
 
-🔹 Design Reasoning
+## 🔹 Design Reasoning
 
-Asynchronous I/O (aiohttp) — allows concurrent HTTP requests with controlled concurrency using asyncio.Semaphore.
+- **Asynchronous I/O (`aiohttp`)** → enables concurrent HTTP requests using `asyncio.Semaphore`.
+- **Retry/backoff (`tenacity`)** → ensures reliability against transient network errors and rate limits.
+- **Checkpointing** → prevents data loss during long runs or unexpected interruptions.
+- **Streaming JSONL output** → writes each record immediately, avoiding memory overload.
+- **Modular structure** → clear separation between `scraper`, `transform`, and `utils` modules.
 
-Retry/backoff (tenacity) — ensures reliability against transient network and 429/5xx errors.
+---
 
-Checkpointing — prevents data loss during long runs or interruptions.
+## ⚠️ Edge Cases Handled
 
-Streaming JSONL output — avoids memory overload; each issue is written immediately.
+| Edge Case | How It’s Handled |
+|------------|------------------|
+| **HTTP 429 (Rate Limit)** | Raises `RateLimitError`, retries after `Retry-After` header or exponential delay |
+| **5xx Server Errors** | Retries with exponential backoff up to 8 times |
+| **Timeouts / Connection Errors** | Automatically retried via `tenacity` |
+| **Malformed or empty data** | Skipped safely; invalid issues stored in `bad_records/` |
+| **Interrupted execution** | Resumes via `checkpoint.json` with `last_startAt` |
+| **Large HTML fields** | Sanitized with `BeautifulSoup(html.parser)` |
+| **Missing optional fields** | Defaults to `None` or `[]` instead of crashing |
+| **File access errors (Windows)** | Retries checkpoint replacement to handle OS locks |
 
-Modular structure — separate folders for scraper, transform, and utils for clarity and reusability.
+---
 
-⚠️ Edge Cases Handled
+## ⚙️ Optimization Decisions
 
-Edge Case	How It’s Handled
+| Optimization | Description |
+|---------------|-------------|
+| **Async concurrency** | Fetch multiple Jira pages simultaneously, limited by a semaphore |
+| **Retry + backoff** | Exponential retry avoids overload and improves reliability |
+| **Streaming writes** | Writes JSONL lines incrementally (no large memory use) |
+| **Checkpointing** | Saves progress after each page for safe resumption |
+| **Heuristic derived fields** | Generates summaries, classification labels, and QnA pairs automatically |
+| **Bad record isolation** | Logs invalid or malformed issues separately for debugging |
 
-HTTP 429 (Rate Limit)	Raises RateLimitError and retries after Retry-After header or exponential delay
+---
 
-5xx Server Errors	Retries with exponential backoff up to 8 times
-
-Timeouts / Connection Errors	Automatically retried by tenacity
-
-Malformed or empty data	Skipped safely with fallback defaults; saved in bad_records/ for review
-
-Interrupted execution	Resumes via checkpoint.json with last_startAt
-
-Large HTML fields	Sanitized using BeautifulSoup (html.parser)
-
-Missing optional fields	Uses None or empty lists instead of crashing
-
-File access errors (Windows)	Retries replacing checkpoint file to handle OS locks
-
-⚙️ Optimization Decisions
-
-Optimization	Description
-
-Async concurrency	Fetch multiple Jira pages simultaneously, limited by a semaphore
-
-Retry + backoff	Exponential retry avoids server overload and ensures success on transient errors
-
-Streaming writes	Writes JSONL lines incrementally (no full dataset in memory)
-
-Checkpointing	Saves progress after each page, allowing resume without data loss
-
-Heuristic derived fields	Generates summaries, classification labels, and QnA pairs automatically for LLM readiness
-
-Bad record isolation	Logs invalid or malformed issues into separate directory for debugging
-
-🧪 Testing
+## 🧪 Testing
 
 Run all tests:
 
+```bash
 pytest -q
+```
 
+**Included tests:**
 
-Tests include:
+- `test_transform.py` → validates HTML-to-text conversion and record transformation  
+- `test_checkpoint.py` → ensures checkpoint save/load consistency  
+- `test_fetcher.py` → mocks HTTP responses for pagination and retry validation  
 
-test_transform.py → Validates HTML-to-text conversion and record transformation.
+---
 
-test_checkpoint.py → Ensures save/load consistency.
-
-test_fetcher.py → Mocks HTTP responses for pagination and retry validation.
-
-🔐 Reliability and Recovery
+## 🔐 Reliability and Recovery
 
 If the scraper stops midway (e.g., network failure, power loss), simply rerun:
 
+```bash
 python run_scrape.py --projects HADOOP SPARK KAFKA
+```
 
-
-It will automatically resume from the last saved checkpoint.
-
+It will **automatically resume** from the last saved checkpoint.  
 Each project maintains independent progress markers.
 
-🚀 Potential Future Improvements
+---
 
-Area	Possible Enhancement
+## 🚀 Potential Future Improvements
 
-Derived fields	Integrate an LLM or summarizer for higher-quality summaries & QnA generation
+| Area | Possible Enhancement |
+|-------|-----------------------|
+| **Derived fields** | Integrate an LLM or summarizer for richer summaries & QnA |
+| **Storage** | Write directly to SQLite / Parquet for efficient analytics |
+| **Parallel pipelines** | Use multiprocessing + async for large-scale crawls |
+| **Rate limit awareness** | Adaptive throttling based on API latency |
+| **Error analytics** | Aggregate and visualize failure types |
+| **Dockerization** | Package for reproducible runs |
+| **CI/CD Integration** | Add GitHub Actions to automate testing and linting |
 
-Storage	Write directly to SQLite / Parquet for easier downstream analysis
+---
 
-Parallel pipelines	Use multiprocessing + async for very large-scale crawling
+## 📚 Example Run Summary
 
-Rate limit awareness	Adaptive throttling based on Jira response times
+| Metric | Value (Sample Run – Hadoop) |
+|--------|------------------------------|
+| **Total Issues Fetched** | 500+ |
+| **Total Retries** | 4 |
+| **Skipped (Malformed)** | 2 |
+| **Total Runtime** | ~2 minutes |
+| **Output Size** | 2.4 MB |
 
-Error analytics	Aggregate and visualize error types from logs
+---
 
-Dockerization	Package into a Docker container for reproducible runs
+## 👨‍💻 Author
 
-CI/CD Integration	Automate testing using GitHub Actions
+**Samrath**  
+Bachelor of Technology (CSE), Bennett University  
+📧 **e22cseu0738@bennett.edu.in**
 
-
-📚 Example Run Summary
-
-Metric	Value (Sample Run – Hadoop)
-
-Total Issues Fetched	500+
-
-Total Retries	4
-
-Skipped (Malformed)	2
-
-Total Runtime	~2 minutes
-
-Output Size	2.4 MB
-
-👨‍💻 Author
-
-Samrath
-Bachelor of Technology (CSE), Bennett University
-📧 e22cseu0738@bennett.edu.in
+---
