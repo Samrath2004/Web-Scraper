@@ -19,6 +19,8 @@ Produces a JSONL dataset suitable for downstream machine learning / NLP tasks.
 Supports resume functionality with checkpointing to recover from interruptions.
 
 ⚙️ Setup & Environment Configuration
+
+
 1️⃣ Prerequisites
 
 Python 3.10+
@@ -54,7 +56,10 @@ ujson	Fast JSON serialization
 beautifulsoup4	HTML-to-text conversion
 dateutil	Date parsing and normalization
 tqdm	Progress tracking
+
 🚀 Usage
+
+
 Run the scraper
 
 Example command:
@@ -107,41 +112,6 @@ Each line represents a single Jira issue in JSON format.
   }
 }
 
-🏗️ Architecture Overview
-🔹 High-level Design
-+-----------------------------+
-|   run_scrape.py (CLI)      |
-+-------------+---------------+
-              |
-              v
-+-------------+---------------+
-| scraper.fetcher             |
-| - orchestrates scraping     |
-| - handles pagination        |
-| - writes checkpoints         |
-+-------------+---------------+
-              |
-              v
-+-------------+---------------+
-| scraper.jira_client         |
-| - makes API calls (async)   |
-| - respects rate limits      |
-| - retries with backoff      |
-+-------------+---------------+
-              |
-              v
-+-------------+---------------+
-| transform.transform          |
-| - cleans HTML                |
-| - builds JSONL records       |
-| - generates derived fields   |
-+-------------+---------------+
-              |
-              v
-+-------------+---------------+
-| checkpoint.json              |
-| - stores progress per project|
-+-------------+---------------+
 
 🔹 Design Reasoning
 
@@ -156,6 +126,7 @@ Streaming JSONL output — avoids memory overload; each issue is written immedia
 Modular structure — separate folders for scraper, transform, and utils for clarity and reusability.
 
 ⚠️ Edge Cases Handled
+
 Edge Case	How It’s Handled
 HTTP 429 (Rate Limit)	Raises RateLimitError and retries after Retry-After header or exponential delay
 5xx Server Errors	Retries with exponential backoff up to 8 times
@@ -200,7 +171,9 @@ It will automatically resume from the last saved checkpoint.
 Each project maintains independent progress markers.
 
 🚀 Potential Future Improvements
+
 Area	Possible Enhancement
+
 Derived fields	Integrate an LLM or summarizer for higher-quality summaries & QnA generation
 Storage	Write directly to SQLite / Parquet for easier downstream analysis
 Parallel pipelines	Use multiprocessing + async for very large-scale crawling
@@ -208,7 +181,10 @@ Rate limit awareness	Adaptive throttling based on Jira response times
 Error analytics	Aggregate and visualize error types from logs
 Dockerization	Package into a Docker container for reproducible runs
 CI/CD Integration	Automate testing using GitHub Actions
+
+
 📚 Example Run Summary
+
 Metric	Value (Sample Run – Hadoop)
 Total Issues Fetched	500+
 Total Retries	4
